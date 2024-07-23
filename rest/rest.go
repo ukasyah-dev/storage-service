@@ -4,10 +4,14 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/swaggest/openapi-go/openapi31"
+	commonAuth "github.com/ukasyah-dev/common/auth"
 	"github.com/ukasyah-dev/common/rest/handler"
+	"github.com/ukasyah-dev/common/rest/middleware"
 	"github.com/ukasyah-dev/common/rest/server"
 	"github.com/ukasyah-dev/storage-service/controller"
+	"github.com/ukasyah-dev/storage-service/model"
 )
 
 var Server *server.Server
@@ -26,19 +30,46 @@ func init() {
 		},
 	}
 
+	// Parse JWT public key
+	jwtPublicKey, err := commonAuth.ParsePublicKeyFromBase64(os.Getenv("BASE64_JWT_PUBLIC_KEY"))
+	if err != nil {
+		panic(err)
+	}
+
 	// Create new server
 	Server = server.New(server.Config{
-		OpenAPI: server.OpenAPI{Spec: &spec},
+		OpenAPI:      server.OpenAPI{Spec: &spec},
+		JWTPublicKey: jwtPublicKey,
 	})
 
 	handler.AddHealthCheck(Server)
 
-	// File
-	handler.Add(Server, http.MethodPost, "/files", controller.CreateFile, handler.Config{
-		Summary:     "Create new file",
-		Description: "Create new file",
-		Tags:        []string{"File"},
+	// Create file
+	Server.FiberApp.Add(http.MethodPost, "/files", middleware.Authenticate(jwtPublicKey), func(c *fiber.Ctx) error {
+		file, _ := c.FormFile("file")
+
+		result, err := controller.CreateFile(c.Context(), &model.CreateFileRequest{
+			File: file,
+		})
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(result)
 	})
+	op, _ := Server.Config.OpenAPI.Reflector.NewOperationContext(http.MethodPost, "/files")
+	op.SetID("createFile")
+	op.SetSummary("Create file")
+	op.SetDescription("Create file")
+	op.SetTags("File")
+	op.AddReqStructure(&model.CreateFileRequest{})
+	op.AddRespStructure(&model.File{})
+	op.AddSecurity("Bearer auth")
+	if err := Server.Config.OpenAPI.Reflector.AddOperation(op); err != nil {
+		panic(err)
+	}
+
+	// File
 	handler.Add(Server, http.MethodGet, "/files", controller.GetFiles, handler.Config{
 		Summary:     "Get all files",
 		Description: "Get all files",

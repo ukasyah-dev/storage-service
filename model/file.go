@@ -1,6 +1,7 @@
 package model
 
 import (
+	"mime/multipart"
 	"time"
 
 	commonModel "github.com/ukasyah-dev/common/model"
@@ -15,7 +16,7 @@ type File struct {
 }
 
 type CreateFileRequest struct {
-	File string `json:"file" validate:"required"`
+	File *multipart.FileHeader `formData:"file" validate:"required"`
 }
 
 type GetFilesRequest struct {

@@ -6,9 +6,14 @@ import (
 	"github.com/appleboy/graceful"
 	"github.com/caitlinelfring/go-env-default"
 	"github.com/ukasyah-dev/storage-service/rest"
+	"github.com/ukasyah-dev/storage-service/s3"
 )
 
 var port = env.GetIntDefault("HTTP_PORT", 3000)
+
+func init() {
+	s3.Open()
+}
 
 func main() {
 	m := graceful.NewManager()
