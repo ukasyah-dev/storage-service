@@ -50,6 +50,7 @@ func init() {
 
 		result, err := controller.CreateFile(c.Context(), &model.CreateFileRequest{
 			File: file,
+			Type: c.FormValue("type"),
 		})
 		if err != nil {
 			return err

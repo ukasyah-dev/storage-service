@@ -5,6 +5,7 @@ import (
 
 	"github.com/appleboy/graceful"
 	"github.com/caitlinelfring/go-env-default"
+	"github.com/ukasyah-dev/storage-service/db"
 	"github.com/ukasyah-dev/storage-service/rest"
 	"github.com/ukasyah-dev/storage-service/s3"
 )
@@ -12,6 +13,7 @@ import (
 var port = env.GetIntDefault("HTTP_PORT", 3000)
 
 func init() {
+	db.Open()
 	s3.Open()
 }
 
@@ -24,6 +26,10 @@ func main() {
 
 	m.AddShutdownJob(func() error {
 		return rest.Server.Shutdown()
+	})
+
+	m.AddShutdownJob(func() error {
+		return db.Close()
 	})
 
 	<-m.Done()
