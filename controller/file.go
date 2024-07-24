@@ -31,7 +31,7 @@ func CreateFile(ctx context.Context, req *model.CreateFileRequest) (*model.File,
 
 	// Attach user ID to tags (optional)
 	if userID, ok := ctx.Value(constant.UserID).(string); ok && userID != "" {
-		tags["user_id"] = userID
+		tags["userId"] = userID
 	}
 
 	file.Tags = lo.MapToSlice(tags, func(k, v string) *model.Tag {
